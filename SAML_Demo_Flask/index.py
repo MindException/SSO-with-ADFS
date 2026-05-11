@@ -1,44 +1,41 @@
 import os
 
-from flask import (Flask, request, render_template, redirect, session,
-                   make_response)
-
-from urlparse import urlparse
+from flask import Flask, request, render_template, redirect, session, make_response
 
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'onelogindemopytoolkit'
-app.config['SAML_PATH'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'saml')
+app.config["SECRET_KEY"] = "onelogindemopytoolkit"
+app.config["SAML_PATH"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saml")
 
-
+# 2. flask 객체 생성
 def init_saml_auth(req):
-    auth = OneLogin_Saml2_Auth(req, custom_base_path=app.config['SAML_PATH'])
+    auth = OneLogin_Saml2_Auth(req, custom_base_path=app.config["SAML_PATH"])
     return auth
 
-
+# 1. 요청 분석 및 dict로 반환
 def prepare_flask_request(request):
     # If server is behind proxys or balancers use the HTTP_X_FORWARDED fields
-    url_data = urlparse(request.url)
     return {
-        'https': 'on' if request.scheme == 'https' else 'off',
-        'http_host': request.host,
-        'server_port': url_data.port,
-        'script_name': request.path,
-        'get_data': request.args.copy(),
-        'post_data': request.form.copy(),
-        # Uncomment if using ADFS as IdP, https://github.com/onelogin/python-saml/pull/144
+        "https": "on" if request.scheme == "https" else "off",
+        "http_host": request.host, # Host: example.com:5000 <- 클라이언트 정보
+        "script_name": request.path, # 요청 URL: https://example.com/sso/login
+        "get_data": request.args.copy(), # 뒤 파라미터: ?id=admin&debug=true
+        # ADFS에서 대소문자 문제 있을 때, 아래 활성화 하기 https://github.com/onelogin/python-saml/pull/144
         # 'lowercase_urlencoding': True,
-        'query_string': request.query_string
+        "post_data": request.form.copy(), # post 값
     }
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route("/", methods=["GET", "POST"])
 def index():
+    
+    # 3. 요청마다 OneLogin_Saml2_Auth 인증 개체 생성
     req = prepare_flask_request(request)
     auth = init_saml_auth(req)
+    
     errors = []
     error_reason = None
     not_auth_warn = False
@@ -46,104 +43,99 @@ def index():
     attributes = False
     paint_logout = False
 
-    if 'sso' in request.args:
-        return redirect(auth.login())
+    if "sso" in request.args:
+        # return redirect(auth.login())
         # If AuthNRequest ID need to be stored in order to later validate it, do instead
-        # sso_built_url = auth.login()
-        # request.session['AuthNRequestID'] = auth.get_last_request_id()
-        # return redirect(sso_built_url)
-    elif 'sso2' in request.args:
-        return_to = '%sattrs/' % request.host_url
+        
+        # flask 쪽 세션 ID 생성 및 브라우저에게 쿠키 전달
+        # 이렇게 하면 쿠키에서 세션 ID를 갖고 있음
+        sso_built_url = auth.login()
+        request.session['AuthNRequestID'] = auth.get_last_request_id()
+        return redirect(sso_built_url)
+
+    elif "sso2" in request.args:
+        return_to = "%sattrs/" % request.host_url
         return redirect(auth.login(return_to))
-    elif 'slo' in request.args:
+    
+    
+    elif "slo" in request.args:
         name_id = session_index = name_id_format = name_id_nq = name_id_spnq = None
-        if 'samlNameId' in session:
-            name_id = session['samlNameId']
-        if 'samlSessionIndex' in session:
-            session_index = session['samlSessionIndex']
-        if 'samlNameIdFormat' in session:
-            name_id_format = session['samlNameIdFormat']
-        if 'samlNameIdNameQualifier' in session:
-            name_id_nq = session['samlNameIdNameQualifier']
-        if 'samlNameIdSPNameQualifier' in session:
-            name_id_spnq = session['samlNameIdSPNameQualifier']
+        if "samlNameId" in session:
+            name_id = session["samlNameId"]
+        if "samlSessionIndex" in session:
+            session_index = session["samlSessionIndex"]
+        if "samlNameIdFormat" in session:
+            name_id_format = session["samlNameIdFormat"]
+        if "samlNameIdNameQualifier" in session:
+            name_id_nq = session["samlNameIdNameQualifier"]
+        if "samlNameIdSPNameQualifier" in session:
+            name_id_spnq = session["samlNameIdSPNameQualifier"]
 
         return redirect(auth.logout(name_id=name_id, session_index=session_index, nq=name_id_nq, name_id_format=name_id_format, spnq=name_id_spnq))
-        #  If LogoutRequest ID need to be stored in order to later validate it, do instead
-        #  slo_built_url = auth.logout(name_id=name_id, session_index=session_index)
-        #  session['LogoutRequestID'] = auth.get_last_request_id()
-        # return redirect(slo_built_url)
-    elif 'acs' in request.args:
+    elif "acs" in request.args:
         request_id = None
-        if 'AuthNRequestID' in session:
-            request_id = session['AuthNRequestID']
+        if "AuthNRequestID" in session:
+            request_id = session["AuthNRequestID"]
 
+        # claim 정보 가져오기
         auth.process_response(request_id=request_id)
         errors = auth.get_errors()
         not_auth_warn = not auth.is_authenticated()
         if len(errors) == 0:
-            if 'AuthNRequestID' in session:
-                del session['AuthNRequestID']
-            session['samlUserdata'] = auth.get_attributes()
-            session['samlNameIdFormat'] = auth.get_nameid_format()
-            session['samlNameIdNameQualifier'] = auth.get_nameid_nq()
-            session['samlNameIdSPNameQualifier'] = auth.get_nameid_spnq()
-            session['samlSessionIndex'] = auth.get_session_index()
+            if "AuthNRequestID" in session:
+                del session["AuthNRequestID"]
+            session["samlUserdata"] = auth.get_attributes()
+            session["samlNameId"] = auth.get_nameid()
+            session["samlNameIdFormat"] = auth.get_nameid_format()
+            session["samlNameIdNameQualifier"] = auth.get_nameid_nq()
+            session["samlNameIdSPNameQualifier"] = auth.get_nameid_spnq()
+            session["samlSessionIndex"] = auth.get_session_index()
             self_url = OneLogin_Saml2_Utils.get_self_url(req)
-            if 'RelayState' in request.form and self_url != request.form['RelayState']:
+            if "RelayState" in request.form and self_url != request.form["RelayState"]:
                 # To avoid 'Open Redirect' attacks, before execute the redirection confirm
                 # the value of the request.form['RelayState'] is a trusted URL.
-                return redirect(auth.redirect_to(request.form['RelayState']))
+                return redirect(auth.redirect_to(request.form["RelayState"]))
         elif auth.get_settings().is_debug_active():
             error_reason = auth.get_last_error_reason()
-    elif 'sls' in request.args:
+    elif "sls" in request.args:
         request_id = None
-        if 'LogoutRequestID' in session:
-            request_id = session['LogoutRequestID']
+        if "LogoutRequestID" in session:
+            request_id = session["LogoutRequestID"]
         dscb = lambda: session.clear()
         url = auth.process_slo(request_id=request_id, delete_session_cb=dscb)
         errors = auth.get_errors()
         if len(errors) == 0:
             if url is not None:
                 # To avoid 'Open Redirect' attacks, before execute the redirection confirm
-                # the value of the request.form['RelayState'] is a trusted URL.
+                # the value of the url is a trusted URL.
                 return redirect(url)
             else:
                 success_slo = True
         elif auth.get_settings().is_debug_active():
             error_reason = auth.get_last_error_reason()
 
-    if 'samlUserdata' in session:
+    if "samlUserdata" in session:
         paint_logout = True
-        if len(session['samlUserdata']) > 0:
-            attributes = session['samlUserdata'].items()
+        if len(session["samlUserdata"]) > 0:
+            attributes = session["samlUserdata"].items()
 
-    return render_template(
-        'index.html',
-        errors=errors,
-        error_reason=error_reason,
-        not_auth_warn=not_auth_warn,
-        success_slo=success_slo,
-        attributes=attributes,
-        paint_logout=paint_logout
-    )
+    return render_template("index.html", errors=errors, error_reason=error_reason, not_auth_warn=not_auth_warn, success_slo=success_slo, attributes=attributes, paint_logout=paint_logout)
 
 
-@app.route('/attrs/')
+@app.route("/attrs/")
 def attrs():
     paint_logout = False
     attributes = False
 
-    if 'samlUserdata' in session:
+    if "samlUserdata" in session:
         paint_logout = True
-        if len(session['samlUserdata']) > 0:
-            attributes = session['samlUserdata'].items()
+        if len(session["samlUserdata"]) > 0:
+            attributes = session["samlUserdata"].items()
 
-    return render_template('attrs.html', paint_logout=paint_logout,
-                           attributes=attributes)
+    return render_template("attrs.html", paint_logout=paint_logout, attributes=attributes)
 
 
-@app.route('/metadata/')
+@app.route("/metadata/")
 def metadata():
     req = prepare_flask_request(request)
     auth = init_saml_auth(req)
@@ -153,11 +145,11 @@ def metadata():
 
     if len(errors) == 0:
         resp = make_response(metadata, 200)
-        resp.headers['Content-Type'] = 'text/xml'
+        resp.headers["Content-Type"] = "text/xml"
     else:
-        resp = make_response(', '.join(errors), 500)
+        resp = make_response(", ".join(errors), 500)
     return resp
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8123, debug=True)
+    app.run(host="0.0.0.0", port=8123, debug=True)
