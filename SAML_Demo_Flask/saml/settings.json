@@ -22,9 +22,9 @@
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
         "singleLogoutService": {
-            "url": "https://sts.LSHCorp.com/adfs/ls/",
+            "url": "https://sts.lshcorp.com/adfs/ls/",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
-        "x509cert": "<onelogin_connector_cert>"
+        "x509cert": "MIIC2jCCAcKgAwIBAgIQbuOng6M3zphHBHJTiU13uDANBgkqhkiG9w0BAQsFADApMScwJQYDVQQDEx5BREZTIFNpZ25pbmcgLSBzdHMuTFNIQ29ycC5jb20wHhcNMjYwNTA1MTI0NDA1WhcNMjcwNTA1MTI0NDA1WjApMScwJQYDVQQDEx5BREZTIFNpZ25pbmcgLSBzdHMuTFNIQ29ycC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkXxOYHYcV6p4xxdpLr8jGC4tM5lIZpzC20cxnI3Tfk4uL1wefTTEdy+BgojmTyoHfMgsxK0YJHsmEkwMHCyv9yZrTPCSmKIIEQpsa5Y8WWGpoXM/avvCjyzKk4tS1RdXHnps4STrm1s0kkArV8bOppnOSXurP03LOM0zf+lnLUNaG7ZmBeDL+FBeDrMP+gqHOhohkn3KDMIu03DXL2MOiR9CIT9wFGjLO9BN1sbI5YfA8DnQt4n4k9B8PRJN10IOfUtMRF0DekQuc+miFRevqxIFvATsResn8qjbfLYR6B/HHKnwpr8gWtsI/zJJw4Y5MpuzmnBNLw2nNFheI29tFAgMBAAEwDQYJKoZIhvcNAQELBQADggEBADnrZAROAHViD3Knka6grRjBJ3PdLhWQuCuE7yOCyc0nG/F3vtONhnTWRWmNHikHVUopOZbrs7Y3lJ0/Kkuc5oIpG0bY2AEYtr/7lA68lBjYrRGVlQj/sCdRovh0sRCDUI+CbIIi/E7y9JxMaPNzB4QGFCRwGm51BYnUhyyamN+e6ul0rwaHY4pPbg5SOdoGdsZ1j5lryxgq3gUyO8ipD6zQT3wHJI2v0a5HI3PgszIthLpusKXnv2mayQCxkGP7cMlyVWZ3no8gQPP9J/QR0FnPYQ71SkxzHA1hJ1iMISyZo+Ff+nZHm6xc/3dq1Qr8XVgEA87mqcRZ6tobdIa6YaY="
     }
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+                     validUntil="2026-05-15T09:50:17Z"
+                     cacheDuration="PT604800S"
+                     entityID="https://app.flask.com/metadata/">
+    <md:SPSSODescriptor AuthnRequestsSigned="false" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                Location="https://app.flask.com/?sls" />
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                     Location="https://app.flask.com/?acs"
+                                     index="1" />
+    </md:SPSSODescriptor>
+    <md:Organization>
+        <md:OrganizationName xml:lang="en-US">sp_test</md:OrganizationName>
+        <md:OrganizationDisplayName xml:lang="en-US">SP test</md:OrganizationDisplayName>
+        <md:OrganizationURL xml:lang="en-US">http://sp.example.com</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="technical">
+        <md:GivenName>technical_name</md:GivenName>
+        <md:EmailAddress>technical@example.com</md:EmailAddress>
+    </md:ContactPerson>
+    <md:ContactPerson contactType="support">
+        <md:GivenName>support_name</md:GivenName>
+        <md:EmailAddress>support@example.com</md:EmailAddress>
+    </md:ContactPerson>
+</md:EntityDescriptor>
